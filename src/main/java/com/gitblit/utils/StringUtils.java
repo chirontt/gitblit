@@ -46,10 +46,6 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StringUtils {
 
-	public static final String MD5_TYPE = "MD5:";
-
-	public static final String COMBINED_MD5_TYPE = "CMD5:";
-
 	/**
 	 * Returns true if the string is null or empty.
 	 *
@@ -58,6 +54,21 @@ public class StringUtils {
 	 */
 	public static boolean isEmpty(String value) {
 		return value == null || value.trim().length() == 0;
+	}
+
+	/**
+	 * Returns true if the character array represents an empty String.
+	 * An empty character sequence is defined as a sequence that
+	 * either has no characters at all, or no characters above
+	 * '\u0020' (space).
+	 *
+	 * @param value
+	 * @return true if value is null or represents an empty String
+	 */
+	public static boolean isEmpty(char[] value) {
+		if (value == null || value.length == 0) return true;
+		for ( char c : value) if (c > '\u0020') return false;
+		return true;
 	}
 
 	/**

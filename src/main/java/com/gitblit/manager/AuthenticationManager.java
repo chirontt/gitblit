@@ -18,10 +18,7 @@ package com.gitblit.manager;
 import java.nio.charset.Charset;
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.Cookie;
@@ -52,6 +49,7 @@ import com.gitblit.models.UserModel;
 import com.gitblit.transport.ssh.SshKey;
 import com.gitblit.utils.Base64;
 import com.gitblit.utils.HttpUtils;
+import com.gitblit.utils.PasswordHash;
 import com.gitblit.utils.StringUtils;
 import com.gitblit.utils.X509Utils.X509Metadata;
 import com.google.inject.Inject;
@@ -454,7 +452,6 @@ public class AuthenticationManager implements IAuthenticationManager {
 	/**
 	 * Authenticate a user based on a username and password.
 	 *
-	 * @see IUserService.authenticate(String, char[])
 	 * @param username
 	 * @param password
 	 * @return a user object or null
@@ -473,33 +470,38 @@ public class AuthenticationManager implements IAuthenticationManager {
 		}
 		
 		String usernameDecoded = StringUtils.decodeUsername(username);
-		String pw = new String(password);
-		if (StringUtils.isEmpty(pw)) {
+		if (StringUtils.isEmpty(password)) {
 			// can not authenticate empty password
 			return null;
 		}
 
 		UserModel user = userManager.getUserModel(usernameDecoded);
 
-		// try local authentication
-		if (user != null && user.isLocalAccount()) {
-			UserModel returnedUser = authenticateLocal(user, password);
-			if (returnedUser != null) {
-				// user authenticated
-				return returnedUser;
-			}
-		} else {
-			// try registered external authentication providers
-			for (AuthenticationProvider provider : authenticationProviders) {
-				if (provider instanceof UsernamePasswordAuthenticationProvider) {
-					UserModel returnedUser = provider.authenticate(usernameDecoded, password);
-					if (returnedUser != null) {
-						// user authenticated
-						returnedUser.accountType = provider.getAccountType();
-						return validateAuthentication(returnedUser, AuthenticationType.CREDENTIALS);
+		try {
+			// try local authentication
+			if (user != null && user.isLocalAccount()) {
+				UserModel returnedUser = authenticateLocal(user, password);
+				if (returnedUser != null) {
+					// user authenticated
+					return returnedUser;
+				}
+			} else {
+				// try registered external authentication providers
+				for (AuthenticationProvider provider : authenticationProviders) {
+					if (provider instanceof UsernamePasswordAuthenticationProvider) {
+						UserModel returnedUser = provider.authenticate(usernameDecoded, password);
+						if (returnedUser != null) {
+							// user authenticated
+							returnedUser.accountType = provider.getAccountType();
+							return validateAuthentication(returnedUser, AuthenticationType.CREDENTIALS);
+						}
 					}
 				}
 			}
+		}
+		finally {
+			// Zero out password array to delete password from memory
+			Arrays.fill(password, Character.MIN_VALUE);
 		}
 
 		// could not authenticate locally or with a provider
@@ -518,25 +520,62 @@ public class AuthenticationManager implements IAuthenticationManager {
 	 */
 	protected UserModel authenticateLocal(UserModel user, char [] password) {
 		UserModel returnedUser = null;
-		if (user.password.startsWith(StringUtils.MD5_TYPE)) {
-			// password digest
-			String md5 = StringUtils.MD5_TYPE + StringUtils.getMD5(new String(password));
-			if (user.password.equalsIgnoreCase(md5)) {
+
+		// Create a copy of the password that we can use to rehash to upgrade to a more secure hashing method.
+		// This is done to be independent from the implementation of the PasswordHash, which might already clear out
+		// the password it gets passed in. This looks a bit stupid, as we could simply clean up the mess, but this
+		// falls under "better safe than sorry".
+		char[] pwdToUpgrade = Arrays.copyOf(password, password.length);
+		try {
+			PasswordHash pwdHash = PasswordHash.instanceFor(user.password);
+			if (pwdHash != null) {
+				if (pwdHash.matches(user.password, password, user.username)) {
+					returnedUser = user;
+				}
+			} else if (user.password.equals(new String(password))) {
+				// plain-text password
 				returnedUser = user;
 			}
-		} else if (user.password.startsWith(StringUtils.COMBINED_MD5_TYPE)) {
-			// username+password digest
-			String md5 = StringUtils.COMBINED_MD5_TYPE
-					+ StringUtils.getMD5(user.username.toLowerCase() + new String(password));
-			if (user.password.equalsIgnoreCase(md5)) {
-				returnedUser = user;
-			}
-		} else if (user.password.equals(new String(password))) {
-			// plain-text password
-			returnedUser = user;
+
+			// validate user
+			returnedUser = validateAuthentication(returnedUser, AuthenticationType.CREDENTIALS);
+
+			// try to upgrade the stored password hash to a stronger hash, if necessary
+			upgradeStoredPassword(returnedUser, pwdToUpgrade, pwdHash);
 		}
-		return validateAuthentication(returnedUser, AuthenticationType.CREDENTIALS);
+		finally {
+			// Now we make sure that the password is zeroed out in any case.
+			Arrays.fill(password, Character.MIN_VALUE);
+			Arrays.fill(pwdToUpgrade, Character.MIN_VALUE);
+		}
+
+		return returnedUser;
 	}
+
+	/**
+	 * Upgrade stored password to a strong hash if configured.
+	 *
+	 * @param user the user to be updated
+	 * @param password the password
+	 * @param pwdHash
+	 * 				Instance of PasswordHash for the stored password entry. If null, no current hashing is assumed.
+	 */
+	private void upgradeStoredPassword(UserModel user, char[] password, PasswordHash pwdHash) {
+		// check if user has successfully authenticated i.e. is not null 
+		if (user == null) return;
+
+		// check if strong hash algorithm is configured
+		String algorithm = settings.getString(Keys.realm.passwordStorage, PasswordHash.getDefaultType().name());
+		if (pwdHash == null || pwdHash.needsUpgradeTo(algorithm)) {
+			// rehash the provided correct password and update the user model
+			pwdHash = PasswordHash.instanceOf(algorithm);
+			if (pwdHash != null) { // necessary since the algorithm name could be something not supported.
+				user.password = pwdHash.toHashedEntry(password, user.username);
+				userManager.updateUserModel(user);
+			}
+		}
+	}
+
 
 	/**
 	 * Returns the Gitlbit cookie in the request.

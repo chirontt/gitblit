@@ -2,8 +2,9 @@ repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
+    //Maven repository for Moxie toolkit
     maven {
-        url = 'http://gitblit.github.io/moxie/maven'
+        url = 'https://gitblit.github.io/moxie/maven'
     }
 }
 
