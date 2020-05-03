@@ -1,5 +1,7 @@
 A fork of [gitblit] to fix various test failures, and to improve the build infrastructure using Gradle as the build tool.
 
+[![GitHub Build Status](https://github.com/chirontt/gitblit/workflows/CI/badge.svg)](https://github.com/chirontt/gitblit/actions)
+
 ## Gradle build
 
 Standard Gradle tasks are used in the `build.gradle` script to compile and package Gitblit artefacts. Also, custom Gradle tasks were added to the standard `buildSrc` folder to achieve complex operations which are unique to the Gitblit project, and thus are unavailable in standard Gradle nor in any relevant plugins on the Internet.

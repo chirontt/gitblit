@@ -1,4 +1,6 @@
-name: Continous build - build and test on every push
+# This workflow will build the Gitblit project with Gradle
+
+name: CI
 
 on:
   push:
@@ -7,21 +9,28 @@ on:
       - gh-pages
 
 jobs:
-  build:
-    name: Build and test
-    runs-on: ${{ matrix.os }}
+  build_linux:
+    name: Build and test in Linux environment
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         java-version: [8, 11]
-    
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         with:
           submodules: true
 
-      - name: Setup Java ${{ matrix.java-version }}
+      - name: Cache Gradle packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Java ${{ matrix.java-version }}
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
@@ -31,34 +40,48 @@ jobs:
           java -version
           javac -version
 
-      - name: Build with Ant
-        run: ant test
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-  build_j7:
-    name: Build and test on Java 7
-    runs-on: ubuntu-latest
-    
+      - name: Build all artefacts
+        run: ./gradlew --no-daemon buildAll
+
+      - name: Run unit tests
+        run: ./gradlew --no-daemon test
+
+  build_windows:
+    name: Build and test in Windows environment
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        java-version: [8, 11]
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         with:
           submodules: true
 
-      - name: Setup Java 7
+      - name: Cache Gradle packages
+        uses: actions/cache@v1
+        with:
+          path: ~\.gradle\caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Java ${{ matrix.java-version }}
         uses: actions/setup-java@v1
         with:
-          java-version: 7
+          java-version: ${{ matrix.java-version }}
 
       - name: Report Java version
         run: |
           java -version
           javac -version
 
-      - name: Setup Moxie
-        run: |
-          wget http://gitblit.github.io/moxie/maven/com/gitblit/moxie/moxie+ant/0.9.4/moxie+ant-0.9.4.tar.gz
-          tar -xzf moxie+ant-0.9.4.tar.gz
-          moxie-0.9.4/bin/moxie -version
+      - name: Build all artefacts
+        run: gradlew.bat --no-daemon buildAll
 
-      - name: Build with Moxie
-        run:  moxie-0.9.4/bin/moxie test
+      - name: Run unit tests
+        run: gradlew.bat --no-daemon test
