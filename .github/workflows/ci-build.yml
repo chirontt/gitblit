@@ -81,7 +81,7 @@ jobs:
           javac -version
 
       - name: Build all artefacts
-        run: gradlew.bat --no-daemon buildAll
+        run: .\gradlew.bat --no-daemon buildAll
 
       - name: Run unit tests
-        run: gradlew.bat --no-daemon test
+        run: .\gradlew.bat --no-daemon test

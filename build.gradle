@@ -38,7 +38,8 @@ ext {
     forumUrl = 'https://groups.google.com/group/gitblit'
     issuesUrl = 'https://github.com/gitblit/gitblit/issues'
     scmUrl = 'https://github.com/gitblit/gitblit'
-    mavenUrl = 'https://gitblit.github.io/gitblit-maven'
+    //mavenUrl = 'https://gitblit.github.io/gitblit-maven'
+    mavenUrl = 'https://chirontt.github.io/gitblit-maven'
 
     // GitHub user/organization name
     ghOrg = "gitblit"
