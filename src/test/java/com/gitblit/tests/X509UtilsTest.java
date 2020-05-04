@@ -60,7 +60,9 @@ public class X509UtilsTest {
 
 	@Before
 	public void prepare() throws Exception {
-		cleanUp();
+		if (folder.exists()) {
+			FileUtils.delete(folder, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.IGNORE_ERRORS);
+		}
 		X509Metadata goMetadata = new X509Metadata("localhost", caPassword);
 		X509Utils.prepareX509Infrastructure(goMetadata, folder, log);
 	}
@@ -68,7 +70,7 @@ public class X509UtilsTest {
 	@After
 	public void cleanUp() throws Exception {
 		if (folder.exists()) {
-			FileUtils.delete(folder, FileUtils.RECURSIVE);
+			FileUtils.delete(folder, FileUtils.RECURSIVE | FileUtils.RETRY);
 		}
 	}
 
