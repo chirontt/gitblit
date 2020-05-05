@@ -46,8 +46,11 @@ jobs:
       - name: Build all artefacts
         run: ./gradlew --no-daemon buildAll
 
-      - name: Run unit tests
-        run: ./gradlew --no-daemon test
+      - name: Run unit tests, excluding the Ldap*Test classes
+        run: ./gradlew --no-daemon test -PexcludeTests=**/Ldap*Test.class
+
+      - name: Run only the Ldap*Test unit tests
+        run: ./gradlew --no-daemon test --tests *Ldap*Test
 
   build_windows:
     name: Build and test in Windows environment
@@ -83,5 +86,9 @@ jobs:
       - name: Build all artefacts
         run: .\gradlew.bat --no-daemon buildAll
 
-      - name: Run unit tests
-        run: .\gradlew.bat --no-daemon test
+      - name: Run unit tests, excluding the LdapPublicKeyManagerTest class
+        run: .\gradlew.bat --no-daemon test -PexcludeTests=**/LdapPublicKeyManagerTest.class
+
+      - name: Run only the LdapPublicKeyManagerTest unit test class
+        run: .\gradlew.bat --no-daemon test --tests *LdapPublicKeyManagerTest
+

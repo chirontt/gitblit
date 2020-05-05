@@ -30,7 +30,6 @@ import java.util.Map;
 
 import org.apache.sshd.common.util.SecurityUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -50,7 +49,7 @@ import com.unboundid.ldap.sdk.ModificationType;
  * @author Florian Zschocke
  *
  */
-@Ignore("inconsistent; would pass when run stand-alone, but fail when run as part of the whole 'unit test' suite")
+//@Ignore("inconsistent; would pass when run stand-alone, but fail when run as part of the whole 'unit test' suite")
 @RunWith(Parameterized.class)
 public class LdapPublicKeyManagerTest extends LdapBasedUnitTest {
 

@@ -106,6 +106,13 @@ sourceSets {
 	}
 }
 
+test {
+    //Dynamic exclude some unit tests through property defined in the command line
+    if (project.hasProperty('excludeTests')) {
+        exclude project.property('excludeTests')
+    }
+}
+
 task copyToRunDir(type: Copy) {
     description = "Copy main classes and resources to the 'run' directory"
     group = 'Run'
