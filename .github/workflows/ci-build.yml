@@ -47,11 +47,11 @@ jobs:
         run: ./gradlew --no-daemon buildAll
 
       - name: Archive build artifacts (built in linux and by Java 8 only)
-          if: matrix.java-version == '8'
+          if: contains(env.JAVA_HOME, 'jdk/8.')
         uses: actions/upload-artifact@v1
         with:
           name: build-artifacts-linux-java${{ matrix.java-version }}
-          path: build\distributions
+          path: build/distributions
 
       - name: Run unit tests, excluding the Ldap*Test classes
         run: ./gradlew --no-daemon test -PexcludeTests=**/Ldap*Test.class
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: test-reports-no-LdapTests-linux-java${{ matrix.java-version }}
-          path: build\reports\tests
+          path: build/reports/tests
 
       - name: Run only the Ldap*Test unit tests
         run: ./gradlew --no-daemon test --tests *Ldap*Test
@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: test-report-for-LdapTests-linux-java${{ matrix.java-version }}
-          path: build\reports\tests
+          path: build/reports/tests
 
 
   build_windows:
@@ -116,7 +116,7 @@ jobs:
           path: build\reports\tests
 
       - name: Archive code coverage reports, excluding LdapPublicKeyManagerTest
-          if: matrix.java-version == '8'
+          if: contains(env.JAVA_HOME, 'jdk\8.')
         uses: actions/upload-artifact@v1
         with:
           name: code-coverage-reports-windows-java${{ matrix.java-version }}
@@ -132,7 +132,7 @@ jobs:
           path: build\reports\tests
 
       - name: Archive code coverage report for LdapPublicKeyManagerTest
-          if: matrix.java-version == '8'
+          if: contains(env.JAVA_HOME, 'jdk\8.')
         uses: actions/upload-artifact@v1
         with:
           name: code-coverage-report-for-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
