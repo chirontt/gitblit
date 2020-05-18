@@ -46,7 +46,7 @@ jobs:
       - name: Build all artifacts
         run: ./gradlew --no-daemon buildAll
 
-      - if: contains(env.JAVA_HOME, 'jdk/8.')
+      -   if: matrix.java-version == '8'
         name: Archive build artifacts (built in linux and by Java 8 only)
         uses: actions/upload-artifact@v1
         with:
@@ -115,8 +115,8 @@ jobs:
           name: test-reports-no-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
           path: build\reports\tests
 
-      - name: Archive code coverage reports, excluding LdapPublicKeyManagerTest
-          if: contains(env.JAVA_HOME, 'jdk\8.')
+      -   if: matrix.java-version == '8'
+        name: Archive code coverage reports, excluding LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
           name: code-coverage-reports-windows-java${{ matrix.java-version }}
@@ -131,8 +131,8 @@ jobs:
           name: test-report-for-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
           path: build\reports\tests
 
-      - name: Archive code coverage report for LdapPublicKeyManagerTest
-          if: contains(env.JAVA_HOME, 'jdk\8.')
+      -   if: matrix.java-version == '8'
+        name: Archive code coverage report for LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
           name: code-coverage-report-for-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
