@@ -56,7 +56,8 @@ jobs:
       - name: Run unit tests, excluding the Ldap*Test classes
         run: ./gradlew --no-daemon test -PexcludeTests=**/Ldap*Test.class
 
-      - name: Archive test reports, excluding the Ldap*Test classes
+      - if: always()
+        name: Archive test reports, excluding the Ldap*Test classes
         uses: actions/upload-artifact@v1
         with:
           name: test-reports-no-LdapTests-linux-java${{ matrix.java-version }}
@@ -65,7 +66,8 @@ jobs:
       - name: Run only the Ldap*Test unit tests
         run: ./gradlew --no-daemon test --tests *Ldap*Test
 
-      - name: Archive test report for the Ldap*Test
+      - if: always()
+        name: Archive test report for the Ldap*Test
         uses: actions/upload-artifact@v1
         with:
           name: test-report-for-LdapTests-linux-java${{ matrix.java-version }}
@@ -109,13 +111,14 @@ jobs:
       - name: Run unit tests, excluding the LdapPublicKeyManagerTest class
         run: .\gradlew.bat --no-daemon test -PexcludeTests=**/LdapPublicKeyManagerTest.class
 
-      - name: Archive test reports, excluding LdapPublicKeyManagerTest
+      - if: always()
+        name: Archive test reports, excluding LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
           name: test-reports-no-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
           path: build\reports\tests
 
-      - if: matrix.java-version == '8'
+      - if: matrix.java-version == '8' && always()
         name: Archive code coverage reports, excluding LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
@@ -125,13 +128,14 @@ jobs:
       - name: Run only the LdapPublicKeyManagerTest unit test class
         run: .\gradlew.bat --no-daemon test --tests *LdapPublicKeyManagerTest
 
-      - name: Archive test report for LdapPublicKeyManagerTest
+      - if: always()
+        name: Archive test report for LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
           name: test-report-for-LdapPublicKeyManagerTest-windows-java${{ matrix.java-version }}
           path: build\reports\tests
 
-      - if: matrix.java-version == '8'
+      - if: matrix.java-version == '8' && always()
         name: Archive code coverage report for LdapPublicKeyManagerTest
         uses: actions/upload-artifact@v1
         with:
