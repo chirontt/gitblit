@@ -12,10 +12,12 @@ group = 'com.gitblit'
 version = '1.9.2-SNAPSHOT'
 description = 'Gitblit'
 
-//compiles build artefacts to
-//run under Java 1.8 and later versions
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+java {
+    //compiles build artifacts to
+    //run under Java 1.8 and later versions
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 ext {
     // Project Metadata
@@ -107,9 +109,18 @@ sourceSets {
 }
 
 test {
-    //Dynamic exclude some unit tests through property defined in the command line
+    //Dynamically exclude some unit tests through a property defined at runtime
     if (project.hasProperty('excludeTests')) {
         exclude project.property('excludeTests')
+    }
+    finalizedBy jacocoTestReport //generate JaCoCo code coverage report after unit test run
+}
+
+jacocoTestReport {
+    //code coverage reports will be generated in the default build/reports/jacoco directory
+    reports {
+        xml.enabled true
+        html.enabled true
     }
 }
 
@@ -248,12 +259,42 @@ dependencies {
 
 checkstyle {
     configFile = file('src/main/config/checkstyle.xml')
-    ignoreFailures = true
     //sourceSets = [sourceSets.main, sourceSets.test]
-    //showViolations = true
-    //reportsDir = file("$project.buildDir/checkstyleReports")
-    dependencies {
-        checkstyle 'com.puppycrawl.tools:checkstyle:8.20'
+    ignoreFailures = true
+    showViolations = true
+    toolVersion = '8.32'
+}
+tasks.withType(Checkstyle) {
+    //disable the default HTML reporting (but leave the XML reporting on);
+    //instead, HTML reports are produced by the custom task checkstyleHtmlReports below
+    reports.html.enabled false
+}
+
+task checkstyleHtmlReports {
+	description = 'Run checkstyle tasks and generate their HTML reports'
+    group = 'verification'
+
+    //depends on checkstyle tasks as specified by checkstyle.sourceSets property
+    dependsOn {
+        project.tasks.withType(Checkstyle).matching { task ->
+            checkstyle.sourceSets.any { sourceSet ->
+                task.name.equalsIgnoreCase('checkstyle'+sourceSet.name)
+            }
+        }
+    }
+    doLast {
+        //generate HTML reports from all checkstyle tasks' XML reports
+        //to be in the default build/reports/checkstyle directory 
+        //and separately in each sourceSet's subdirectory
+        checkstyle.sourceSets.each { sourceSet ->
+            ant.xslt(
+                style: 'src/main/config/checkstyle-frames-errors.xsl',
+                in: "${checkstyle.reportsDir}/${sourceSet.name}.xml",
+                out: "${checkstyle.reportsDir}/${sourceSet.name}.html") {
+                    param (name: 'output.dir',
+                           expression: "${checkstyle.reportsDir}/${sourceSet.name}")
+            }
+        }
     }
 }
 
@@ -682,8 +723,7 @@ task jarGitblitApiClasses(type: Jar) {
             'Implementation-Version': version,
             'Created-By': 'Gradle ' + getGradle().getGradleVersion(),
             'Build-Date': snapshotDate,
-            'Build-Jdk': System.getProperty('java.version'),
-            //'Main-Class': 'com.gitblit.client.GitblitClient'
+            'Build-Jdk': System.getProperty('java.version')
         )
     }
 
