@@ -46,8 +46,8 @@ jobs:
       - name: Build all artifacts
         run: ./gradlew --no-daemon buildAll
 
-      - name: Archive build artifacts (built in linux and by Java 8 only)
-          if: contains(env.JAVA_HOME, 'jdk/8.')
+      - if: contains(env.JAVA_HOME, 'jdk/8.')
+        name: Archive build artifacts (built in linux and by Java 8 only)
         uses: actions/upload-artifact@v1
         with:
           name: build-artifacts-linux-java${{ matrix.java-version }}
