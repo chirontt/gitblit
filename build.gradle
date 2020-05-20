@@ -179,6 +179,7 @@ repositories {
     maven {
         url = "$mavenUrl"
     }
+    jcenter()
 }
 
 dependencies {
